@@ -1,4 +1,5 @@
-use std::fmt;
+use core::fmt;
+use libm::F64Ext;
 
 use crate::display::{Display, SPRITES};
 use crate::instruction::{Instruction, RawInstruction};
@@ -26,7 +27,7 @@ where
     key_to_wait_for: Option<u8>,
     keyboard: [bool; NUM_KEYS],
     random: RANDOM,
-    pub display: Box<Display>,
+    pub display: Display,
 }
 
 impl<RANDOM> Chip8<RANDOM>
@@ -49,7 +50,7 @@ where
             key_to_wait_for: None,
             keyboard: [false; NUM_KEYS],
             random,
-            display: Box::new(Display::new()),
+            display: Display::new(),
         }
     }
 
