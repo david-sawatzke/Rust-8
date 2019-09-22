@@ -33,7 +33,7 @@ fn main() {
     let mut computer = chip8::Chip8::new(&game_data, FastRng::new());
 
     while let Some(e) = window.next() {
-        if let Some(_) = e.render_args() {
+        if e.render_args().is_some() {
             draw_screen(&computer.display.get_buffer(), &mut window, &e);
         }
 

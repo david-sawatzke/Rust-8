@@ -45,18 +45,16 @@ pub struct RawInstruction {
 
 impl RawInstruction {
     pub fn new(value: u16) -> RawInstruction {
-        RawInstruction { value: value }
+        RawInstruction { value }
     }
 
     pub fn to_instruction(&self) -> Option<Instruction> {
         match self.xooo() {
-            0x0 => {
-                match self.ooxx() {
-                    0xE0 => Some(Instruction::ClearDisplay),
-                    0xEE => Some(Instruction::Return),
-                    _ => None,
-                }
-            }
+            0x0 => match self.ooxx() {
+                0xE0 => Some(Instruction::ClearDisplay),
+                0xEE => Some(Instruction::Return),
+                _ => None,
+            },
             0x1 => Some(Instruction::Jump(self.oxxx())),
             0x2 => Some(Instruction::Call(self.oxxx())),
             0x3 => Some(Instruction::SkipIfEqualsByte(self.oxoo(), self.ooxx())),
@@ -64,46 +62,40 @@ impl RawInstruction {
             0x5 => Some(Instruction::SkipIfEqual(self.oxoo(), self.ooxo())),
             0x6 => Some(Instruction::LoadByte(self.oxoo(), self.ooxx())),
             0x7 => Some(Instruction::AddByte(self.oxoo(), self.ooxx())),
-            0x8 => {
-                match self.ooox() {
-                    0x0 => Some(Instruction::Move(self.oxoo(), self.ooxo())),
-                    0x1 => Some(Instruction::Or(self.oxoo(), self.ooxo())),
-                    0x2 => Some(Instruction::And(self.oxoo(), self.ooxo())),
-                    0x3 => Some(Instruction::Xor(self.oxoo(), self.ooxo())),
-                    0x4 => Some(Instruction::Add(self.oxoo(), self.ooxo())),
-                    0x5 => Some(Instruction::Sub(self.oxoo(), self.ooxo())),
-                    0x6 => Some(Instruction::ShiftRight(self.oxoo())),
-                    0x7 => Some(Instruction::ReverseSub(self.oxoo(), self.ooxo())),
-                    0xE => Some(Instruction::ShiftLeft(self.oxoo())),
-                    _ => None,
-                }
-            }
+            0x8 => match self.ooox() {
+                0x0 => Some(Instruction::Move(self.oxoo(), self.ooxo())),
+                0x1 => Some(Instruction::Or(self.oxoo(), self.ooxo())),
+                0x2 => Some(Instruction::And(self.oxoo(), self.ooxo())),
+                0x3 => Some(Instruction::Xor(self.oxoo(), self.ooxo())),
+                0x4 => Some(Instruction::Add(self.oxoo(), self.ooxo())),
+                0x5 => Some(Instruction::Sub(self.oxoo(), self.ooxo())),
+                0x6 => Some(Instruction::ShiftRight(self.oxoo())),
+                0x7 => Some(Instruction::ReverseSub(self.oxoo(), self.ooxo())),
+                0xE => Some(Instruction::ShiftLeft(self.oxoo())),
+                _ => None,
+            },
             0x9 => Some(Instruction::SkipIfNotEqual(self.oxoo(), self.ooxo())),
             0xA => Some(Instruction::LoadI(self.oxxx())),
             0xB => Some(Instruction::JumpPlusZero(self.oxxx())),
             0xC => Some(Instruction::Random(self.oxoo(), self.ooxx())),
             0xD => Some(Instruction::Draw(self.oxoo(), self.ooxo(), self.ooox())),
-            0xE => {
-                match self.ooxx() {
-                    0x9E => Some(Instruction::SkipIfPressed(self.oxoo())),
-                    0xA1 => Some(Instruction::SkipIfNotPressed(self.oxoo())),
-                    _ => None,
-                }
-            }
-            0xF => {
-                match self.ooxx() {
-                    0x07 => Some(Instruction::LoadDelayTimer(self.oxoo())),
-                    0x0A => Some(Instruction::WaitForKeyPress(self.oxoo())),
-                    0x15 => Some(Instruction::SetDelayTimer(self.oxoo())),
-                    0x18 => Some(Instruction::SetSoundTimer(self.oxoo())),
-                    0x1E => Some(Instruction::AddToI(self.oxoo())),
-                    0x29 => Some(Instruction::LoadSprite(self.oxoo())),
-                    0x33 => Some(Instruction::BCDRepresentation(self.oxoo())),
-                    0x55 => Some(Instruction::StoreRegisters(self.oxoo())),
-                    0x65 => Some(Instruction::LoadRegisters(self.oxoo())),
-                    _ => None,
-                }
-            }
+            0xE => match self.ooxx() {
+                0x9E => Some(Instruction::SkipIfPressed(self.oxoo())),
+                0xA1 => Some(Instruction::SkipIfNotPressed(self.oxoo())),
+                _ => None,
+            },
+            0xF => match self.ooxx() {
+                0x07 => Some(Instruction::LoadDelayTimer(self.oxoo())),
+                0x0A => Some(Instruction::WaitForKeyPress(self.oxoo())),
+                0x15 => Some(Instruction::SetDelayTimer(self.oxoo())),
+                0x18 => Some(Instruction::SetSoundTimer(self.oxoo())),
+                0x1E => Some(Instruction::AddToI(self.oxoo())),
+                0x29 => Some(Instruction::LoadSprite(self.oxoo())),
+                0x33 => Some(Instruction::BCDRepresentation(self.oxoo())),
+                0x55 => Some(Instruction::StoreRegisters(self.oxoo())),
+                0x65 => Some(Instruction::LoadRegisters(self.oxoo())),
+                _ => None,
+            },
             _ => None,
         }
     }
