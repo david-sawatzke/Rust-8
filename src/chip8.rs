@@ -26,16 +26,10 @@ pub struct Chip8 {
 }
 
 impl Chip8 {
-    pub fn new(program: Vec<u8>) -> Chip8 {
+    pub fn new(program: &[u8]) -> Chip8 {
         let mut memory = [0; MEMORY_SIZE];
-        // TODO: do this more efficiently
-        for (i, byte) in program.iter().enumerate() {
-            memory[PROGRAM_CODE_OFFSET + i] = byte.clone();
-        }
-        for (i, byte) in SPRITES.iter().enumerate() {
-            memory[i] = byte.clone();
-        }
-
+        memory[PROGRAM_CODE_OFFSET..PROGRAM_CODE_OFFSET + program.len()].copy_from_slice(program);
+        memory[0..SPRITES.len()].copy_from_slice(&SPRITES);
         Chip8 {
             regs: [0; NUM_GENERAL_PURPOSE_REGS],
             i_reg: 0,
