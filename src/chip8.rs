@@ -10,6 +10,7 @@ const MEMORY_SIZE: usize = 4 * 1024;
 const NUM_STACK_FRAMES: usize = 16;
 const PROGRAM_CODE_OFFSET: usize = 0x200;
 const CLOCK_RATE: f64 = 600.0;
+const TIMER_RATE: f64 = 60.0;
 const NUM_KEYS: usize = 16;
 
 pub struct Chip8<RANDOM>
@@ -18,8 +19,8 @@ where
 {
     regs: [u8; NUM_GENERAL_PURPOSE_REGS],
     i_reg: u16,
-    delay_timer_reg: u8,
-    sound_timer_reg: u8,
+    delay_timer_reg: u16,
+    sound_timer_reg: u16,
     stack_pointer_reg: u8,
     program_counter_reg: u16,
     memory: [u8; MEMORY_SIZE],
@@ -216,8 +217,8 @@ where
                 }
             }
             Instruction::LoadDelayTimer(reg) => {
-                let delay_value = self.delay_timer_reg;
-                self.load_reg(reg, delay_value);
+                let delay_value = self.delay_timer_reg as f64 * (TIMER_RATE / CLOCK_RATE);
+                self.load_reg(reg, delay_value as u8);
                 self.program_counter_reg + 2
             }
             Instruction::WaitForKeyPress(reg) => {
@@ -227,7 +228,7 @@ where
             }
             Instruction::SetDelayTimer(reg) => {
                 let value = self.read_reg(reg);
-                self.delay_timer_reg = value;
+                self.delay_timer_reg = (value as f64 * (CLOCK_RATE / TIMER_RATE)) as u16;
                 self.program_counter_reg + 2
             }
             Instruction::SetSoundTimer(_) => {
