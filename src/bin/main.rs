@@ -1,12 +1,13 @@
 extern crate piston_window;
 extern crate rand;
 
-mod chip8;
-mod display;
-mod instruction;
+use rust_8::chip8;
+use rust_8::display;
 use std::env;
 use std::fs::File;
 use std::io::Read;
+
+use random_fast_rng::FastRng;
 
 use piston_window::*;
 
@@ -29,7 +30,7 @@ fn main() {
         .exit_on_esc(true)
         .build()
         .unwrap();
-    let mut computer = chip8::Chip8::new(&game_data);
+    let mut computer = chip8::Chip8::new(&game_data, FastRng::new());
 
     while let Some(e) = window.next() {
         if let Some(_) = e.render_args() {

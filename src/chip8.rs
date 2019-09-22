@@ -2,7 +2,7 @@ use std::fmt;
 
 use crate::display::{Display, SPRITES};
 use crate::instruction::{Instruction, RawInstruction};
-use rand::Rng;
+use random_trait::Random;
 
 const NUM_GENERAL_PURPOSE_REGS: usize = 16;
 const MEMORY_SIZE: usize = 4 * 1024;
@@ -11,7 +11,10 @@ const PROGRAM_CODE_OFFSET: usize = 0x200;
 const CLOCK_RATE: f64 = 600.0;
 const NUM_KEYS: usize = 16;
 
-pub struct Chip8 {
+pub struct Chip8<RANDOM>
+where
+    RANDOM: Random,
+{
     regs: [u8; NUM_GENERAL_PURPOSE_REGS],
     i_reg: u16,
     delay_timer_reg: u8,
@@ -22,11 +25,15 @@ pub struct Chip8 {
     stack: [u16; NUM_STACK_FRAMES],
     key_to_wait_for: Option<u8>,
     keyboard: [bool; NUM_KEYS],
+    random: RANDOM,
     pub display: Box<Display>,
 }
 
-impl Chip8 {
-    pub fn new(program: &[u8]) -> Chip8 {
+impl<RANDOM> Chip8<RANDOM>
+where
+    RANDOM: Random,
+{
+    pub fn new(program: &[u8], random: RANDOM) -> Self {
         let mut memory = [0; MEMORY_SIZE];
         memory[PROGRAM_CODE_OFFSET..PROGRAM_CODE_OFFSET + program.len()].copy_from_slice(program);
         memory[0..SPRITES.len()].copy_from_slice(&SPRITES);
@@ -37,10 +44,11 @@ impl Chip8 {
             sound_timer_reg: 0,
             stack_pointer_reg: 0,
             program_counter_reg: PROGRAM_CODE_OFFSET as u16,
-            memory: memory,
+            memory,
             stack: [0; NUM_STACK_FRAMES],
             key_to_wait_for: None,
             keyboard: [false; NUM_KEYS],
+            random,
             display: Box::new(Display::new()),
         }
     }
@@ -174,8 +182,7 @@ impl Chip8 {
                 panic!("Not yet implemeneted: {:?}", instruction);
             }
             Instruction::Random(reg, value) => {
-                let rng = &mut rand::thread_rng();
-                let rand_number: u8 = rng.gen();
+                let rand_number = self.random.get_u8();
 
                 self.load_reg(reg, rand_number & value);
                 self.program_counter_reg + 2
@@ -291,7 +298,10 @@ impl Chip8 {
     }
 }
 
-impl<'a> fmt::Debug for Chip8 {
+impl<'a, RANDOM> fmt::Debug for Chip8<RANDOM>
+where
+    RANDOM: Random,
+{
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(
             f,

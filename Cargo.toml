@@ -7,3 +7,5 @@ edition = "2018"
 [dependencies]
 piston_window = "0.105.0"
 rand = "0.7.0"
+random-trait= "0.1.1"
+random-fast-rng = "0.1.1"
