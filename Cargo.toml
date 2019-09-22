@@ -2,7 +2,8 @@
 name = "rust-8"
 version = "0.0.1"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
+edition = "2018"
 
 [dependencies]
-piston_window = "0.32.0"
-rand = "0.3.0"
+piston_window = "0.105.0"
+rand = "0.7.0"

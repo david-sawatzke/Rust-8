@@ -1,10 +1,8 @@
 use std::fmt;
 
-extern crate rand;
-
-use instruction::{Instruction, RawInstruction};
-use display::{Display,SPRITES};
-use rand::distributions::{IndependentSample, Range};
+use crate::display::{Display, SPRITES};
+use crate::instruction::{Instruction, RawInstruction};
+use rand::Rng;
 
 const NUM_GENERAL_PURPOSE_REGS: usize = 16;
 const MEMORY_SIZE: usize = 4 * 1024;
@@ -183,7 +181,7 @@ impl Chip8 {
             }
             Instruction::Random(reg, value) => {
                 let rng = &mut rand::thread_rng();
-                let rand_number = Range::new(0, 255).ind_sample(rng);
+                let rand_number: u8 = rng.gen();
 
                 self.load_reg(reg, rand_number & value);
                 self.program_counter_reg + 2
@@ -301,10 +299,10 @@ impl Chip8 {
 
 impl<'a> fmt::Debug for Chip8 {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f,
-               "CPU {{ regs: {:?}, i_reg: {}, program_counter_reg: {} }}",
-               self.regs,
-               self.i_reg,
-               self.program_counter_reg)
+        write!(
+            f,
+            "CPU {{ regs: {:?}, i_reg: {}, program_counter_reg: {} }}",
+            self.regs, self.i_reg, self.program_counter_reg
+        )
     }
 }
