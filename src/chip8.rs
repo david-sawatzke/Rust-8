@@ -121,7 +121,7 @@ where
                 self.program_counter_reg + 2
             }
             Instruction::Or(_, _) => {
-                panic!("Not yet implemeneted: {:?}", instruction);
+                panic!("Not yet implemented: {:?}", instruction);
             }
             Instruction::And(reg1, reg2) => {
                 let first = self.read_reg(reg1);
@@ -179,7 +179,7 @@ where
                 self.program_counter_reg + 2
             }
             Instruction::JumpPlusZero(_) => {
-                panic!("Not yet implemeneted: {:?}", instruction);
+                panic!("Not yet implemented: {:?}", instruction);
             }
             Instruction::Random(reg, value) => {
                 let rand_number = self.random.get_u8();
