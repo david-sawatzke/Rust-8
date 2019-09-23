@@ -31,14 +31,24 @@ fn main() {
         .build()
         .unwrap();
     let mut computer = chip8::Chip8::new(&game_data, FastRng::new());
-
+    let mut instruction_time_left = 0.0;
+    let mut clock_time_left = 0.0;
     while let Some(e) = window.next() {
         if e.render_args().is_some() {
             draw_screen(&computer.display.get_buffer(), &mut window, &e);
         }
 
         if let Some(u) = e.update_args() {
-            computer.cycle(u.dt);
+            instruction_time_left += u.dt;
+            while instruction_time_left > 1.0 / chip8::INSTRUCTION_RATE as f64 {
+                instruction_time_left -= 1.0 / chip8::INSTRUCTION_RATE as f64;
+                clock_time_left += 1.0 / chip8::INSTRUCTION_RATE as f64;
+                computer.run_cycle();
+                if clock_time_left > 1.0 / chip8::TIMER_RATE as f64 {
+                    computer.timer_tick();
+                    clock_time_left -= 1.0 / chip8::TIMER_RATE as f64;
+                }
+            }
         }
 
         if let Some(Button::Keyboard(key)) = e.release_args() {

@@ -1,5 +1,4 @@
 use core::fmt;
-use libm::F64Ext;
 
 use crate::display::{Display, SPRITES};
 use crate::instruction::{Instruction, RawInstruction};
@@ -9,8 +8,10 @@ const NUM_GENERAL_PURPOSE_REGS: usize = 16;
 const MEMORY_SIZE: usize = 4 * 1024;
 const NUM_STACK_FRAMES: usize = 16;
 const PROGRAM_CODE_OFFSET: usize = 0x200;
-const CLOCK_RATE: f64 = 600.0;
-const TIMER_RATE: f64 = 60.0;
+// Seems to generally be 1000-500 hz
+// https://news.ycombinator.com/item?id=16198141
+pub const INSTRUCTION_RATE: u32 = 1200;
+pub const TIMER_RATE: u32 = 60;
 const NUM_KEYS: usize = 16;
 
 pub struct Chip8<RANDOM>
@@ -19,8 +20,8 @@ where
 {
     regs: [u8; NUM_GENERAL_PURPOSE_REGS],
     i_reg: u16,
-    delay_timer_reg: u16,
-    sound_timer_reg: u16,
+    delay_timer_reg: u8,
+    sound_timer_reg: u8,
     stack_pointer_reg: u8,
     program_counter_reg: u16,
     memory: [u8; MEMORY_SIZE],
@@ -55,21 +56,18 @@ where
         }
     }
 
-    pub fn cycle(&mut self, seconds_since_last_cycle: f64) {
-        let num_instructions = (seconds_since_last_cycle * CLOCK_RATE).round() as u64;
-
-        for _ in 1..num_instructions {
-            if self.delay_timer_reg > 0 {
-                self.delay_timer_reg -= 1;
-            }
-
-            if self.key_to_wait_for == None {
-                let instruction = self.instruction();
-                self.program_counter_reg = self.run_instruction(&instruction);
-            }
+    pub fn run_cycle(&mut self) {
+        if self.key_to_wait_for == None {
+            let instruction = self.instruction();
+            self.program_counter_reg = self.run_instruction(&instruction);
         }
     }
 
+    pub fn timer_tick(&mut self) {
+        if self.delay_timer_reg > 0 {
+            self.delay_timer_reg -= 1;
+        }
+    }
     fn run_instruction(&mut self, instruction: &Instruction) -> u16 {
         match *instruction {
             Instruction::ClearDisplay => {
@@ -217,8 +215,8 @@ where
                 }
             }
             Instruction::LoadDelayTimer(reg) => {
-                let delay_value = self.delay_timer_reg as f64 * (TIMER_RATE / CLOCK_RATE);
-                self.load_reg(reg, delay_value as u8);
+                let delay_value = self.delay_timer_reg;
+                self.load_reg(reg, delay_value);
                 self.program_counter_reg + 2
             }
             Instruction::WaitForKeyPress(reg) => {
@@ -228,7 +226,7 @@ where
             }
             Instruction::SetDelayTimer(reg) => {
                 let value = self.read_reg(reg);
-                self.delay_timer_reg = (value as f64 * (CLOCK_RATE / TIMER_RATE)) as u16;
+                self.delay_timer_reg = value;
                 self.program_counter_reg + 2
             }
             Instruction::SetSoundTimer(_) => {
