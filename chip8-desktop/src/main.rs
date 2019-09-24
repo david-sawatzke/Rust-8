@@ -1,5 +1,4 @@
 extern crate piston_window;
-extern crate rand;
 
 use rust_8::chip8;
 use rust_8::display;
