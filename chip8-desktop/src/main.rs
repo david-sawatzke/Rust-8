@@ -1,7 +1,6 @@
 extern crate piston_window;
 
-use rust_8::chip8;
-use rust_8::display;
+use chip8::display;
 use std::env;
 use std::fs::File;
 use std::io::Read;

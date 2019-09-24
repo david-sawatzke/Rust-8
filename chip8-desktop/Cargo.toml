@@ -1,5 +1,5 @@
 [package]
-name = "rust-8-desktop"
+name = "chip8-desktop"
 version = "0.0.1"
 authors = ["Ryan Levick <ryan.levick@gmail.com>"]
 edition = "2018"
@@ -8,5 +8,5 @@ edition = "2018"
 piston_window = "0.105.0"
 random-trait= "0.1.1"
 random-fast-rng = "0.1.1"
-[dependencies.rust-8]
+[dependencies.chip8]
 path = "../chip8"
