@@ -6,21 +6,23 @@ use panic_halt;
 
 use stm32f0xx_hal as hal;
 
-use crate::hal::{delay::Delay, prelude::*, stm32};
+use crate::hal::{delay::Delay, prelude::*, stm32, time::Hertz, timers::Timer};
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
 mod keypad;
+mod random;
 
 #[entry]
 fn main() -> ! {
     if let (Some(mut p), Some(cp)) = (stm32::Peripherals::take(), cortex_m::Peripherals::take()) {
         cortex_m::interrupt::free(move |cs| {
             let mut rcc = p.RCC.configure().sysclk(8.mhz()).freeze(&mut p.FLASH);
+            let game_data = include_bytes!("../../Space Invaders.ch8");
 
             // Get delay provider
-            let mut delay = Delay::new(cp.SYST, &rcc);
+            let mut _delay = Delay::new(cp.SYST, &rcc);
 
             let gpioa = p.GPIOA.split(&mut rcc);
             let gpiob = p.GPIOB.split(&mut rcc);
@@ -41,13 +43,21 @@ fn main() -> ! {
                 gpioa.pa3.into_pull_up_input(cs),
                 gpioa.pa4.into_pull_up_input(cs),
             );
-
+            let mut instruction_timer =
+                Timer::tim16(p.TIM16, Hertz(chip8::INSTRUCTION_RATE), &mut rcc);
+            let mut delay_timer = Timer::tim17(p.TIM17, Hertz(chip8::TIMER_RATE), &mut rcc);
+            let mut computer = chip8::Chip8::new(game_data, random::RandomGen { state: 43 });
             loop {
-                let pressed_keys =
-                    keypad::read_keypad(&mut r1, &mut r2, &mut r3, &mut r4, &c1, &c2, &c3, &c4)
-                        .unwrap();
-                hprintln!("{:?}, {:?}", pressed_keys, c1.is_low()).unwrap();
-                delay.delay_ms(1_000_u16);
+                if instruction_timer.wait().is_ok() {
+                    computer.run_cycle();
+                    let pressed_keys =
+                        keypad::read_keypad(&mut r1, &mut r2, &mut r3, &mut r4, &c1, &c2, &c3, &c4)
+                            .unwrap();
+                    hprintln!("{:?}, {:?}", pressed_keys, c1.is_low()).unwrap();
+                }
+                if delay_timer.wait().is_ok() {
+                    computer.timer_tick();
+                }
             }
         });
     }

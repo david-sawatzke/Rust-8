@@ -13,7 +13,11 @@ cortex-m = "0.5.8"
 cortex-m-semihosting = "0.3.5"
 embedded-hal = "0.2.3"
 bitflags = "1.2.0"
+random-trait= "0.1.1"
 
 [dependencies.stm32f0xx-hal]
 version = "0.15"
 features = ["stm32f042", "rt"]
+
+[dependencies.chip8]
+path = "../chip8"
