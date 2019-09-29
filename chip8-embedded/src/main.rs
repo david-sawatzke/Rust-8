@@ -6,23 +6,24 @@ use panic_halt;
 
 use stm32f0xx_hal as hal;
 
-use crate::hal::{delay::Delay, prelude::*, stm32, time::Hertz, timers::Timer};
+use crate::hal::{delay::Delay, prelude::*, spi::Spi, stm32, time::Hertz, timers::Timer};
 
 use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
 mod keypad;
+mod output;
 mod random;
 
 #[entry]
 fn main() -> ! {
     if let (Some(mut p), Some(cp)) = (stm32::Peripherals::take(), cortex_m::Peripherals::take()) {
         cortex_m::interrupt::free(move |cs| {
-            let mut rcc = p.RCC.configure().sysclk(8.mhz()).freeze(&mut p.FLASH);
+            let mut rcc = p.RCC.configure().sysclk(48.mhz()).freeze(&mut p.FLASH);
             let game_data = include_bytes!("../../Space Invaders.ch8");
 
             // Get delay provider
-            let mut _delay = Delay::new(cp.SYST, &rcc);
+            let mut delay = Delay::new(cp.SYST, &rcc);
 
             let gpioa = p.GPIOA.split(&mut rcc);
             let gpiob = p.GPIOB.split(&mut rcc);
@@ -43,11 +44,29 @@ fn main() -> ! {
                 gpioa.pa3.into_pull_up_input(cs),
                 gpioa.pa4.into_pull_up_input(cs),
             );
+
+            // Display spi pins
+            let spi_pins = (
+                gpioa.pa5.into_alternate_af0(cs),
+                gpioa.pa6.into_alternate_af0(cs),
+                gpioa.pa7.into_alternate_af0(cs),
+            );
+            let (dc, rst, cs) = (
+                gpiob.pb0.into_push_pull_output(cs),
+                gpiob.pb1.into_push_pull_output(cs),
+                gpioa.pa15.into_push_pull_output(cs),
+            );
+            let spi = Spi::spi1(p.SPI1, spi_pins, ili9341::MODE, Hertz(48_000_000), &mut rcc);
+            let mut ili = ili9341::Ili9341::new(spi, cs, dc, rst, &mut delay).unwrap();
+            // Check display resolution
+            ili.set_orientation(ili9341::Orientation::Landscape)
+                .unwrap();
             let mut instruction_timer =
                 Timer::tim16(p.TIM16, Hertz(chip8::INSTRUCTION_RATE), &mut rcc);
             let mut delay_timer = Timer::tim17(p.TIM17, Hertz(chip8::TIMER_RATE), &mut rcc);
             let mut computer = chip8::Chip8::new(game_data, random::RandomGen { state: 43 });
             let mut pressed_key = None;
+            let mut output = false;
             loop {
                 if instruction_timer.wait().is_ok() {
                     computer.run_cycle();
@@ -71,6 +90,13 @@ fn main() -> ! {
                 }
                 if delay_timer.wait().is_ok() {
                     computer.timer_tick();
+                    output = !output;
+                    // Display at 30Hz
+                    if output {
+                        let buffer = computer.display.get_buffer();
+                        let output_iter = output::OutputData::new(&buffer);
+                        ili.draw_iter(0, 0, 319, 239, output_iter).unwrap();
+                    }
                 }
             }
         });
