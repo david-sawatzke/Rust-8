@@ -13,7 +13,6 @@ use cortex_m_rt::entry;
 use cortex_m_semihosting::hprintln;
 
 mod keypad;
-mod output;
 mod random;
 
 #[entry]
@@ -97,8 +96,20 @@ fn main() -> ! {
         let mut output = false;
         loop {
             // TODO Add counter while the output stuff is running
-            if instruction_timer.wait().is_ok() {
-                computer.run_cycle();
+            // if instruction_timer.wait().is_ok() {
+            // }
+            if delay_timer.wait().is_ok() {
+                for _ in 0..40 {
+                    computer.run_cycle();
+                }
+                computer.timer_tick();
+                output = !output;
+                // Display at 30Hz
+                if output {
+                    let buffer = computer.display.get_buffer();
+                    let output_iter = chip8::output::OutputData::new(&buffer);
+                    ili.draw_iter(0, 0, 319, 239, output_iter).unwrap();
+                }
                 let pressed_keys =
                     keypad::read_keypad(&mut r1, &mut r2, &mut r3, &mut r4, &c1, &c2, &c3, &c4)
                         .unwrap();
@@ -115,16 +126,6 @@ fn main() -> ! {
                     }
                     Some(curr_pressed_key)
                 };
-            }
-            if delay_timer.wait().is_ok() {
-                computer.timer_tick();
-                output = !output;
-                // Display at 30Hz
-                if output {
-                    let buffer = computer.display.get_buffer();
-                    let output_iter = output::OutputData::new(&buffer);
-                    ili.draw_iter(0, 0, 319, 239, output_iter).unwrap();
-                }
             }
         }
     }

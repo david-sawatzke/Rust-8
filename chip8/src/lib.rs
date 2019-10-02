@@ -1,6 +1,7 @@
 #![no_std]
 pub mod display;
 pub mod instruction;
+pub mod output;
 
 use core::fmt;
 
