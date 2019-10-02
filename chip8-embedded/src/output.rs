@@ -53,7 +53,7 @@ impl<'a> Iterator for OutputData<'a> {
                 // We're in the y overflow area;
                 let overflow_pixels = (DISPLAY_HEIGHT - HEIGHT as u16 * SCALE_Y) * DISPLAY_WIDTH;
                 if self.count.1 + 1 < overflow_pixels {
-                    self.count.0 += 1;
+                    self.count.1 += 1;
                     return Some(0x0000);
                 } else {
                     return None;
