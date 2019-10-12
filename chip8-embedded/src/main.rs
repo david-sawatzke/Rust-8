@@ -34,7 +34,7 @@ static DELAY_COUNTER: Mutex<RefCell<(u32, Option<Timer<TIM4>>)>> =
 #[entry]
 fn main() -> ! {
     if let (Some(p), Some(cp)) = (stm32::Peripherals::take(), cortex_m::Peripherals::take()) {
-        let (mut ili, (mut r1, mut r2, mut r3, mut r4), (c1, c2, c3, c4)) =
+        let (mut ili, (mut r1, mut r2, mut r3, mut r4), (c1, c2, c3, c4), mut delay) =
             cortex_m::interrupt::free(move |cs| {
                 let mut flash = p.FLASH.constrain();
                 let mut rcc = p.RCC.constrain();
@@ -65,7 +65,7 @@ fn main() -> ! {
                     gpioa.pa8.into_pull_up_input(&mut gpioa.crh),
                     gpioa.pa9.into_pull_up_input(&mut gpioa.crh),
                     gpioa.pa10.into_pull_up_input(&mut gpioa.crh),
-                    gpioa.pa11.into_pull_up_input(&mut gpioa.crh),
+                    gpioa.pa12.into_pull_up_input(&mut gpioa.crh),
                 );
 
                 // Display spi pins
@@ -107,7 +107,7 @@ fn main() -> ! {
                 INSTRUCTION_COUNTER.borrow(cs).borrow_mut().1 = Some(instruction_timer);
                 DELAY_COUNTER.borrow(cs).borrow_mut().1 = Some(delay_timer);
 
-                (ili, row_pins, collum_pins)
+                (ili, row_pins, collum_pins, delay)
             });
         let game_data = include_bytes!("../../Space Invaders.ch8");
         let mut computer = chip8::Chip8::new(game_data, random::RandomGen { state: 43 });
@@ -131,11 +131,11 @@ fn main() -> ! {
             let buffer = computer.display.get_buffer();
             let output_iter = chip8::output::OutputData::new(&buffer);
             ili.draw_iter(0, 0, 319, 239, output_iter).unwrap();
-            let pressed_keys =
-                keypad::read_keypad(&mut r1, &mut r2, &mut r3, &mut r4, &c1, &c2, &c3, &c4)
-                    .unwrap();
+            let pressed_keys = keypad::read_keypad(
+                &mut delay, &mut r1, &mut r2, &mut r3, &mut r4, &c1, &c2, &c3, &c4,
+            )
+            .unwrap();
             let curr_pressed_key = pressed_keys.trailing_zeros() as u8;
-            hprintln!("{:?}", curr_pressed_key).ok();
             // TODO Expand for multiple pressed keys
             pressed_key = if curr_pressed_key == 16 {
                 if let Some(prev_pressed_key) = pressed_key {

@@ -1,4 +1,5 @@
 use bitflags::bitflags;
+use embedded_hal::blocking::delay::DelayUs;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 
 bitflags! {
@@ -10,7 +11,8 @@ bitflags! {
     }
 }
 
-pub fn read_keypad<R1, R2, R3, R4, C1, C2, C3, C4, E>(
+pub fn read_keypad<R1, R2, R3, R4, C1, C2, C3, C4, DELAY, E>(
+    delay: &mut DELAY,
     r1: &mut R1,
     r2: &mut R2,
     r3: &mut R3,
@@ -21,6 +23,7 @@ pub fn read_keypad<R1, R2, R3, R4, C1, C2, C3, C4, E>(
     c4: &C4,
 ) -> Result<u16, E>
 where
+    DELAY: DelayUs<u8>,
     R1: OutputPin<Error = E>,
     R2: OutputPin<Error = E>,
     R3: OutputPin<Error = E>,
@@ -34,15 +37,19 @@ where
     r2.set_high()?;
     r3.set_high()?;
     r4.set_high()?;
+    delay.delay_us(3);
     let row1 = read_row(c1, c2, c3, c4)?.bits();
     r1.set_high()?;
     r2.set_low()?;
+    delay.delay_us(3);
     let row2 = read_row(c1, c2, c3, c4)?.bits();
     r2.set_high()?;
     r3.set_low()?;
+    delay.delay_us(3);
     let row3 = read_row(c1, c2, c3, c4)?.bits();
     r3.set_high()?;
     r4.set_low()?;
+    delay.delay_us(3);
     let row4 = read_row(c1, c2, c3, c4)?.bits();
     r4.set_high()?;
     let pressed_keys = row1 as u16 | (row2 as u16) << 4 | (row3 as u16) << 8 | (row4 as u16) << 12;

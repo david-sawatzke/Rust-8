@@ -15,7 +15,7 @@ const NUM_STACK_FRAMES: usize = 16;
 const PROGRAM_CODE_OFFSET: usize = 0x200;
 // Seems to generally be 1000-500 hz
 // https://news.ycombinator.com/item?id=16198141
-pub const INSTRUCTION_RATE: u32 = 1200;
+pub const INSTRUCTION_RATE: u32 = 800;
 pub const TIMER_RATE: u32 = 60;
 const NUM_KEYS: usize = 16;
 
